@@ -46,9 +46,7 @@ public class LexicalAnalyzer {
         for(int i = 0; i < 17; i++){
             for(int j = 0; j < 17; j++){
                 tokenTransitions[i][j] = sc.nextInt();
-                System.out.print(tokenTransitions[i][j] + "\t");
             }
-            System.out.println();
         }
 
 
@@ -138,9 +136,7 @@ public class LexicalAnalyzer {
                         case 10:
                             do{
                                 temp.item = temp.item + sc.next();
-                                System.out.println("COMMENTS: " + temp.item);
                             }while(!temp.item.endsWith("*/"));
-                            System.out.println("BREAK");
                             temp.type = "comment";
                             comm = true;
                             tokens.add(temp);
@@ -167,7 +163,7 @@ public class LexicalAnalyzer {
             }
 
         }
-        System.out.println(tokens.toString());
+        //System.out.println(tokens.toString());
 
 
         //Get transition table for table driven problem solving
@@ -177,9 +173,7 @@ public class LexicalAnalyzer {
         for(int i = 0; i < rows; i++){
             for(int j = 0; j < cols; j++){
                 tTable[i][j] = sc.nextInt();
-                System.out.print(tTable[i][j] + "\t");
             }
-            System.out.println();
         }
 
         //Create symbol table
@@ -271,7 +265,7 @@ public class LexicalAnalyzer {
 
             iteration++;
         }
-        System.out.println(symbols.toString());
+        //System.out.println(symbols.toString());
 
         PrintWriter writer = new PrintWriter("output.txt", "UTF-8");
 
