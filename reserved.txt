@@ -8,3 +8,5 @@ CALL
 DO
 ODD
 CLASS
+get
+put

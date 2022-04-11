@@ -3,12 +3,6 @@ import java.io.*;
 
 public class LexicalAnalyzer {
 
-    enum Type {
-        identifier,
-        integer,
-        comment
-    }
-
     static class token {
         String item;
         String type;
@@ -22,13 +16,13 @@ public class LexicalAnalyzer {
     static class Symbol {
         String item;
         String type;
-        String value = "";
+        String value;
         int address;
         boolean segment;
 
         public String toString() {
             String format = String.format("\n%-30s\t%-20s\t%-20s\t%-20s\t%-20s",
-                    item, type, value, address, segment? "CS":"DS");
+                    item, type, value == null? "-":value, address, segment? "CS":"DS");
             return format;
         }
     }
@@ -42,76 +36,135 @@ public class LexicalAnalyzer {
             reserved.add(sc.next());
 
         //Scanner and tokenization
-        sc = new Scanner(new File("code.txt"));
+        sc = new Scanner(new File("tokenTransitions.txt"));
         ArrayList<token> tokens = new ArrayList<token>();
-        while (sc.hasNext()) {
-            token temp = new token();
-            temp.item = sc.next();
-            Character first = temp.item.charAt(0);
-            if (Character.isDigit(first)) {
-                temp.type = "numLit";
-                token delim = new token();
-                for (int j = 1; j < temp.item.length(); j++) {
-                    if (!Character.isDigit(temp.item.charAt(j))) {
-                        if (temp.item.charAt(j) != '(') {
-                            delim.item = Character.toString(temp.item.charAt(j));
-                            delim.type = "#" + delim.item;
-                        }
-                        temp.item = temp.item.substring(0, j);
-                    }
-                }
-                tokens.add(temp);
-                if (delim.type != null)
-                    tokens.add(delim);
-            } else if (Character.isLetter(first)) {
-                temp.type = "ident";
-                token delim = new token();
-
-                for (int j = 1; j < temp.item.length(); j++) {
-                    if (!Character.isLetter(temp.item.charAt(j)) && !Character.isDigit(temp.item.charAt(j))) {
-                        if (temp.item.charAt(j) != '(') {
-                            delim.item = Character.toString(temp.item.charAt(j));
-                            delim.type = "#" + delim.item;
-                        }
-                        temp.item = temp.item.substring(0, j);
-                    }
-                }
-                if (reserved.contains(temp.item))
-                    temp.type = "$" + temp.item;
-                tokens.add(temp);
-                if (delim.type != null)
-                    tokens.add(delim);
-            } else if (first.equals('=')) {
-                temp.type = "&assign";
-                if(temp.item.length() > 1)
-                    temp.type = "&relop";
-                tokens.add(temp);
-            } else if(first.equals('+') || first.equals('-') ){
-                temp.type = "&addop";
-                tokens.add(temp);
-            } else if(first.equals('*') || (first.equals('/') && temp.item.length() > 2)){
-                temp.type = "&mop";
-                tokens.add(temp);
-            } else if(first.equals('<') || first.equals('>') || first.equals('!')){
-                temp.type = "&relop";
-                tokens.add(temp);
-            }else if(first.equals('}')) {
-                temp.type = "#}";
-                tokens.add(temp);
-            } else if(first.equals('{')) {
-                temp.type = "#{";
-                tokens.add(temp);
-            } else if (temp.item.equals("/*")) {
-                temp.type = "comment";
-                String next = sc.next();
-                while (!next.equals("*/")) {
-                    temp.item = temp.item + " " + next;
-                    next = sc.next();
-                }
-                temp.item = temp.item + " " + next;
-                tokens.add(temp);
+        int[][] tokenTransitions = new int[17][17];
+        ArrayList<String> headers = new ArrayList<String>();
+        for(int i = 0; i < 16; i++){
+            headers.add(sc.next());
+        }
+        for(int i = 0; i < 17; i++){
+            for(int j = 0; j < 17; j++){
+                tokenTransitions[i][j] = sc.nextInt();
+                System.out.print(tokenTransitions[i][j] + "\t");
             }
+            System.out.println();
+        }
 
+
+        sc = new Scanner(new File("code.txt"));
+        while (sc.hasNext()) {
+            int currentState = 0, iteration = 0;
+            int inputType, oldstate;
+            boolean comm =false;
+            while(sc.hasNext()){
+                LexicalAnalyzer.token temp = new LexicalAnalyzer.token();
+                temp.item = sc.next();
+                Character chr = temp.item.charAt(0);
+                for(int i = 0; i <= temp.item.length(); i++){
+                    if(i == temp.item.length()){
+                        inputType = 16;
+                        chr = ' ';
+                    }
+
+
+                    else{
+                        chr = temp.item.charAt(i);
+                        if(Character.isLetter(chr)){
+                            inputType = 0;
+                        }
+                        else if (Character.isDigit(chr)){
+                            inputType = 1;
+                        }
+                        else {
+                            inputType = headers.indexOf(Character.toString(chr));
+                        }
+                    }
+
+
+                    oldstate = currentState;
+                    if(currentState == -1){
+                        System.out.println(tokens.toString());
+                        break;
+                    }
+                    currentState = tokenTransitions[currentState][inputType];
+
+                    token temp2 = new token();
+                    String delim = "";
+                    switch (currentState){
+                        case 2:
+                            temp.type = "$assign";
+                            tokens.add(temp);
+                            break;
+                        case 3:
+                            temp.type = "ident";
+                            delim = temp.item.substring(i, temp.item.length());
+                            temp.item = temp.item.substring(0, i);
+                            if(reserved.contains(temp.item))
+                                temp.type = "$"  +temp.item;
+                            tokens.add(temp);
+                            if(delim.length() > 0){
+                                for(int x = 0; x < delim.length(); x++){
+                                    temp2 = new token();
+                                    temp2.item = ""+ delim.charAt(x);
+                                    temp2.type = "#" + temp2.item;
+                                    tokens.add(temp2);
+                                }
+                            }
+                            break;
+                        case 4:
+                        case 15:
+                            temp.type = "#" + temp.item;
+                            tokens.add(temp);
+                            break;
+                        case 6:
+                            temp.type = "numLit";
+                            delim = temp.item.substring(i, temp.item.length());
+                            temp.item = temp.item.substring(0, i);
+                            tokens.add(temp);
+                            if(delim.length() > 0) {
+                                for (int x = 0; x < delim.length(); x++) {
+                                    temp2 = new token();
+                                    temp2.item = "" + delim.charAt(x);
+                                    temp2.type = "#" + temp2.item;
+                                    tokens.add(temp2);
+                                }
+                            }
+                            break;
+                        case 8:
+                            temp.type = "&relop";
+                            tokens.add(temp);
+                            break;
+                        case 10:
+                            do{
+                                temp.item = temp.item + sc.next();
+                                System.out.println("COMMENTS: " + temp.item);
+                            }while(!temp.item.endsWith("*/"));
+                            System.out.println("BREAK");
+                            temp.type = "comment";
+                            comm = true;
+                            tokens.add(temp);
+                            break;
+                        case 13:
+                            temp.type = "&addop";
+                            tokens.add(temp);
+                            break;
+                        case 14:
+                            temp.type = "&mulop";
+                            tokens.add(temp);
+                            break;
+                    }
+
+                    if(i == temp.item.length() ){
+                        inputType = 17;
+                    }
+                    if(comm){
+                        comm = false;
+                        break;
+                    }
+                }
+                currentState = 0;
+            }
 
         }
         System.out.println(tokens.toString());
@@ -124,7 +177,9 @@ public class LexicalAnalyzer {
         for(int i = 0; i < rows; i++){
             for(int j = 0; j < cols; j++){
                 tTable[i][j] = sc.nextInt();
+                System.out.print(tTable[i][j] + "\t");
             }
+            System.out.println();
         }
 
         //Create symbol table
@@ -148,7 +203,7 @@ public class LexicalAnalyzer {
                 inputType = 3;
             } else if(valT.equals("$VAR")) {
                 inputType = 4;
-            } else if(valT.equals("&assign")) {
+            } else if(valT.equals("$assign")) {
                 inputType = 5;
             } else if(valT.equals("numLit")) {
                 inputType = 6;
@@ -164,43 +219,56 @@ public class LexicalAnalyzer {
             }
             int oldState = currentState;
 
+
             currentState = tTable[currentState][inputType];
             if(oldState == 1){
                 curr.segment = true;
                 curr.type = "$PROGRAMNAME";
-                curr.address = codeSeg + 1;
-                codeSeg++;
+                curr.address = codeSeg;
+                codeSeg += 2;
                 symbols.add(curr);
             }
             if(oldState == 7){
                 curr.segment = false;
                 curr.type = "CONSTVAR";
                 curr.item = tokens.get(iteration-3).item;
-                curr.address = dataSeg + 1;
+                curr.address = dataSeg;
                 curr.value = tokens.get(iteration-1).item;
-                dataSeg++;
+                dataSeg += 2;
                 symbols.add(curr);
             }
             if(oldState == 9){
                 curr.segment = false;
                 curr.type = "VAR";
                 curr.item = tokens.get(iteration-1).item;
-                curr.address = dataSeg + 1;
-                dataSeg++;
+                curr.address = dataSeg;
+                dataSeg += 2;
                 symbols.add(curr);
             }
             if(currentState == 11){
-                curr.segment = false;
-                curr.type = "numLiteral";
-                curr.address = dataSeg + 1;
                 curr.value = curr.item;
-                dataSeg++;
-                symbols.add(curr);
+                boolean there = false;
+                for(int x = 0; x < symbols.size(); x++){
+                    if(symbols.get(x).type.equals("numLiteral")){
+                        if( symbols.get(x).value.equals(curr.value))
+                            there = true;
+                    }
+                }
+                if(!there){
+                    curr.segment = false;
+                    curr.type = "numLiteral";
+                    curr.address = dataSeg;
+                    dataSeg += 2;
+                    symbols.add(curr);
+                }
             }
+
             if(currentState == -1) {
+                System.out.println("At " + oldState + " GOT " + valT + " " + inputType);
                 System.out.println("SOMETHING IS NOT PROFESSIONAL GRADE!");
                 break;
             }
+
             iteration++;
         }
         System.out.println(symbols.toString());
@@ -214,7 +282,7 @@ public class LexicalAnalyzer {
             writer.print(tokens.get(i));
         }
 
-        writer.println("\n\n\nSymbol Table");
+        writer.println("\n!END!\n\n\nSymbol Table");
         writer.println(String.format("%-30s\t%-20s\t%-20s\t%-20s\t%-20s",
                 "Token", "Class", "Value", "Address", "Segment"));
         writer.print("--------------------------------------------------------------" +
@@ -222,8 +290,10 @@ public class LexicalAnalyzer {
         for(int i = 0; i < symbols.size(); i++){
             writer.print(symbols.get(i));
         }
+        writer.println("\n!END!");
         writer.close();
 
+        QuadsGenerator.generateQuads();
 
     }
 }
