@@ -1,53 +1,95 @@
 CLASS LargestCommonDenominator {
-    CONST M = 7, N = 85;
-    VAR X, Y, Z, Q, R;
+    CONST M = 0, N = 85;
+    VAR a, b, c, Bob, Jane, ans;
 
-    PROCEDURE Multiply(){
-          VAR A, B;
-
-          A = X;  B = Y;  Z = 0;
-          WHILE B > 0 DO {
-                 IF A == B THEN Z = 4 * ( Z + A ) - 3;
-                 A = 2 * A;  B = B / 2;
-          }
+    PROCEDURE calculate(){
+        GET a;
+        GET Bob;
+        GET Jane;
+        GET b;
+        GET c;
+        ans = a * ( ( Bob + Jane - 10 ) / 2 * 4 ) / ( b + c );
+        PUT ans;
     }
 
-    PROCEDURE Divide(){
-          VAR W;
-
-          R = X;  Q = 0;  W = Y;
-          WHILE W <= R DO W = 2 * W;
-          WHILE W > Y DO {
-                 Q = 2 * Q;  W = W / 2 + 3 * 8;
-                 IF W <= R THEN {
-                       R = R - W;
-                       Q = Q + 1;
-                }
-         }
+    PROCEDURE greater(){
+        GET a;
+        GET b;
+        IF a > b THEN PUT a;
+        IF b > a THEN PUT b;
     }
 
-    PROCEDURE GCD(){
-          VAR F, G;
-
-          F = X;  G = Y;
-          WHILE F != G DO {
-                 IF F < G THEN G = G - F;
-                 IF G < F THEN F = F - G;
-          }
-          Z = F;
-    }
-
-    PROCEDURE FACT(){
-        IF Y > 1 THEN {
-            X = X * Y;
-            CALL FACT();
+    PROCEDURE greatest(){
+        GET a;
+        GET b;
+        GET c;
+        IF a > b THEN {
+            IF a > c THEN PUT a;
         }
-        Y = Y - 1;
+
+        IF b > a THEN {
+            IF b > c THEN PUT b;
+        }
+
+        IF c > a THEN {
+            IF c > b THEN PUT c;
+        }
+    }
+
+    PROCEDURE fact1(){
+        GET b;
+        a = 1;
+        WHILE b > 1 DO {
+            a = a * b;
+            b = b - 1;
+        }
+        PUT a;
+    }
+
+    PROCEDURE nested(){
+        GET b;
+        ans = 0;
+        WHILE b > 1 DO {
+            GET a;
+            WHILE a > 1 DO {
+                ans = ans + 1;
+                a = a - 1;
+            }
+            b = b - 1;
+        }
+        PUT ans;
+    }
+
+    PROCEDURE fact2(){
+        IF b > 1 THEN {
+            a = a * b;
+            b = b - 1;
+            CALL fact2();
+        }
     }
 
     /*  Main Program.  */
-    X = M;  Y = N;  CALL Multiply();
-    X = 25;  Y = 3;  CALL Divide();
-    X = 84;  Y = 36;  CALL GCD();
-    X = 1; Y = 5; CALL FACT();
+    a = 1 + 1;
+    PUT a;
+    a = 1 - 1;
+    PUT a;
+    a = 2 * 2;
+    PUT a;
+    a = 4 / 2;
+    PUT a;
+
+    CALL calculate();
+    PUT N;
+    CALL greater();
+    PUT N;
+    CALL greatest();
+    PUT N;
+    CALL fact1();
+    PUT N;
+    CALL nested();
+    GET b;
+    a = 1;
+    CALL fact2();
+    PUT a;
+
 }

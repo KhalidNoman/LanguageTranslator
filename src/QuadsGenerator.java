@@ -9,7 +9,7 @@ public class QuadsGenerator {
         String arg3 = "?";
 
         public String toString(){
-            return String.format("%10s, %10s, %10s, %10s",op, arg1, arg2, arg3);
+            return String.format("%10s, %10s, %10s, %10s,",op, arg1, arg2, arg3);
         }
     }
 
@@ -18,10 +18,10 @@ public class QuadsGenerator {
         ArrayList<LexicalAnalyzer.token> myStack = new ArrayList<LexicalAnalyzer.token>();
         ArrayList<String> fixUp = new ArrayList<>();
         ArrayList<String> whileFix = new ArrayList<>();
-        Scanner sc = new Scanner(new File("output.txt"));
+        Scanner sc = new Scanner(new File("tokens.txt"));
         boolean reduced = false;
         int tempUsed = 1, labels = 0, whiles = 0;
-        PrintWriter writer = new PrintWriter("partial.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter("quads.txt", "UTF-8");
         for (int i = 0; i < 3; i++)
             sc.nextLine();
 
@@ -66,13 +66,22 @@ public class QuadsGenerator {
 
             }
             else if(!headers.contains(tokens.get(i).item) && !tokens.get(i).item.equals(",")){
-                myStack.add(tokens.get(i));
-                if(tokens.get(i).type.equals("$PROCEDURE")){
+                if(tokens.get(i).item.equals("PUT") || tokens.get(i).item.equals("GET")) {
                     quads qds = new quads();
-                    qds.op = "PROCEDURE";
+                    qds.op = tokens.get(i).item;
                     qds.arg1 = tokens.get(i+1).item;
                     writer.println(qds);
+                    i++;
+                } else {
+                    myStack.add(tokens.get(i));
+                    if (tokens.get(i).type.equals("$PROCEDURE")) {
+                        quads qds = new quads();
+                        qds.op = "PROCEDURE";
+                        qds.arg1 = tokens.get(i + 1).item;
+                        writer.println(qds);
+                    }
                 }
+
             } else {
                 if(lastOp != 0){
                     //System.out.println("CHECKING: " + myStack.get(lastOp).item  + " WITH " + tokens.get(i).item );
@@ -298,7 +307,8 @@ public class QuadsGenerator {
                             }
                         }
                     }
-                }else {
+
+                } else {
                     myStack.add(tokens.get(i));
                     lastOp = myStack.size() - 1;
                 }

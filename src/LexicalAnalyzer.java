@@ -279,7 +279,7 @@ public class LexicalAnalyzer {
         }
         //System.out.println(symbols.toString());
 
-        PrintWriter writer = new PrintWriter("output.txt", "UTF-8");
+        PrintWriter writer = new PrintWriter("tokens.txt", "UTF-8");
 
         writer.println("Classification Table");
         writer.println(String.format("%-30s\t %-20s", "Token", "Classification"));
@@ -300,6 +300,7 @@ public class LexicalAnalyzer {
         writer.close();
 
         QuadsGenerator.generateQuads();
+        AsemblyGenerator.generateAssembly();
 
     }
 }
