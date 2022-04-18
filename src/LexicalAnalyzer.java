@@ -38,12 +38,12 @@ public class LexicalAnalyzer {
         //Scanner and tokenization
         sc = new Scanner(new File("tokenTransitions.txt"));
         ArrayList<token> tokens = new ArrayList<token>();
-        int[][] tokenTransitions = new int[17][17];
+        int[][] tokenTransitions = new int[18][17];
         ArrayList<String> headers = new ArrayList<String>();
         for(int i = 0; i < 16; i++){
             headers.add(sc.next());
         }
-        for(int i = 0; i < 17; i++){
+        for(int i = 0; i < 18; i++){
             for(int j = 0; j < 17; j++){
                 tokenTransitions[i][j] = sc.nextInt();
             }
@@ -112,6 +112,14 @@ public class LexicalAnalyzer {
                             break;
                         case 4:
                         case 15:
+                            if(temp.item.length()>1){
+                                delim = temp.item.substring(0, temp.item.length()-1);
+                                temp2 = new token();
+                                temp2.item = delim;
+                                temp2.type = "#" + temp2.item;
+                                tokens.add(temp2);
+                            }
+                            temp.item = Character.toString(temp.item.charAt(temp.item.length()-1));
                             temp.type = "#" + temp.item;
                             tokens.add(temp);
                             break;
@@ -149,6 +157,10 @@ public class LexicalAnalyzer {
                             temp.type = "&mulop";
                             tokens.add(temp);
                             break;
+//                        case 17:
+//                            temp.type = "#"+temp.item;
+//                            tokens.add(temp);
+//                            break;
                     }
 
                     if(i == temp.item.length() ){

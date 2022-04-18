@@ -7,7 +7,7 @@ CLASS LargestCommonDenominator {
 
           A = X;  B = Y;  Z = 0;
           WHILE B > 0 DO {
-                 IF A == B THEN Z = 4 * (Z + A) - 2;
+                 IF A == B THEN Z = 4 * ( Z + A ) - 3;
                  A = 2 * A;  B = B / 2;
           }
     }
@@ -37,8 +37,17 @@ CLASS LargestCommonDenominator {
           Z = F;
     }
 
+    PROCEDURE FACT(){
+        IF Y > 1 THEN {
+            X = X * Y;
+            CALL FACT();
+        }
+        Y = Y - 1;
+    }
+
     /*  Main Program.  */
     X = M;  Y = N;  CALL Multiply();
     X = 25;  Y = 3;  CALL Divide();
     X = 84;  Y = 36;  CALL GCD();
+    X = 1; Y = 5; CALL FACT();
 }

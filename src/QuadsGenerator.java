@@ -9,16 +9,18 @@ public class QuadsGenerator {
         String arg3 = "?";
 
         public String toString(){
-            return op + ", " + arg1 + ", " + arg2 + ", " + arg3;
+            return String.format("%10s, %10s, %10s, %10s",op, arg1, arg2, arg3);
         }
     }
 
     public static void generateQuads() throws Exception{
         ArrayList<LexicalAnalyzer.token> tokens = new ArrayList<LexicalAnalyzer.token>();
         ArrayList<LexicalAnalyzer.token> myStack = new ArrayList<LexicalAnalyzer.token>();
+        ArrayList<String> fixUp = new ArrayList<>();
+        ArrayList<String> whileFix = new ArrayList<>();
         Scanner sc = new Scanner(new File("output.txt"));
         boolean reduced = false;
-        int tempUsed = 1;
+        int tempUsed = 1, labels = 0, whiles = 0;
         PrintWriter writer = new PrintWriter("partial.txt", "UTF-8");
         for (int i = 0; i < 3; i++)
             sc.nextLine();
@@ -104,10 +106,10 @@ public class QuadsGenerator {
                                             qds.op = hold.item;
                                             break;
                                         case 2:
-                                            qds.arg2 = hold.item;
+                                            qds.arg1 = hold.item;
                                             break;
                                         case 0:
-                                            qds.arg1 = hold.item;
+                                            qds.arg2 = hold.item;
                                             break;
                                     }
                                     qds.arg3 = "T"+tempUsed;
@@ -165,11 +167,20 @@ public class QuadsGenerator {
 //                                    System.out.println("REMOVE " + myStack.remove(myStack.size()-1));
 //                                }
 //                                reduced = true;
-                            } else if(myStack.get(lastOp).item.equals(")")){
-//                                System.out.println(myStack.get(lastOp).type);
-
-                                for(int x = 0; x < 2; x++){
-                                    System.out.println("REMOVE " + myStack.remove(myStack.size()-1));
+                            } else if(myStack.get(lastOp).type.equals("#)")){
+                                myStack.remove(myStack.size()-1);
+                                for(int x = myStack.size()-1; x > -1; x--){
+                                    if(myStack.get(x).type.equals("#(")){
+                                        myStack.remove(x);
+                                        break;
+                                    }
+                                }
+                                if(myStack.get(myStack.size()-2).item.equals("PROCEDURE")){
+                                    myStack.remove(myStack.size()-1);
+                                    myStack.remove(myStack.size()-1);
+                                    quads qds = new quads();
+                                    qds.op = "RETURN";
+                                    writer.println(qds);
                                 }
                                 reduced = true;
                             } else if(myStack.get(lastOp).item.equals("CALL")){
@@ -189,19 +200,61 @@ public class QuadsGenerator {
                                 writer.println(qds);
                             } else if(myStack.get(lastOp).item.equals("{")){
                                 myStack.remove(myStack.size()-1);
-                                LexicalAnalyzer.token temp = new LexicalAnalyzer.token();
-                                temp.item = ";";
-                                temp.type = "#;";
-                                myStack.add(temp);
-                                writer.println("RETURN");
+//                                LexicalAnalyzer.token temp = new LexicalAnalyzer.token();
+//                                temp.item = ";";
+//                                temp.type = "#;";
+//                                myStack.add(temp);
+                                tokens.get(i).item = ";";
+                                i--;
+                                if(myStack.get(myStack.size()-3).item.equals("CLASS")){
+                                    quads qds = new quads();
+                                    qds.op= "JUMP";
+                                    qds.arg1 = "FINI";
+                                    writer.println(qds);
+                                }
+//                                writer.println("RETURN");
+                                reduced = true;
+                            } else if(myStack.get(lastOp).item.equals("THEN")){
+                                System.out.println("FIXING " + fixUp.toString());
+                                for(int x = myStack.size()-1; x > -1; x--){
+                                    String check = myStack.remove(myStack.size()-1).item;
+                                    System.out.println("IF CHECK: " + check);
+                                    if(check.equals("IF")){
+                                        break;
+                                    }
+                                }
+//                                System.out.println(myStack.remove(myStack.size()-1));
+//                                System.out.println(myStack.remove(myStack.size()-1));
+                                quads qds = new quads();
+                                qds.op = fixUp.remove(fixUp.size()-1);
+                                writer.println(qds);
+                                reduced = true;
                             } else if(myStack.get(lastOp).item.equals("DO")){
-                                System.out.println("HERE WE GO");
+                                quads qds = new quads();
+                                qds.op = "JUMP";
+                                qds.arg1 = whileFix.remove(whileFix.size()-1);
+                                writer.println(qds);
+                                System.out.println("FIXING " + fixUp.toString());
+                                for(int x = myStack.size()-1; x > -1; x--){
+                                    String check = myStack.remove(myStack.size()-1).item;
+                                    System.out.println("WHILE CHECK: " + check);
+                                    if(check.equals("WHILE")){
+                                        break;
+                                    }
+                                }
+//                                System.out.println(myStack.remove(myStack.size()-1));
+//                                System.out.println(myStack.remove(myStack.size()-1));
+//                                System.out.println(myStack.remove(myStack.size()-1));
+                                qds = new quads();
+                                qds.op = fixUp.remove(fixUp.size()-1);
+                                writer.println(qds);
+                                reduced = true;
+
                             }
 
                             for(int x = myStack.size() -1; x > -1; x--){
                                 if(headers.contains(myStack.get(x).item)){
                                     lastOp = x;
-                                    System.out.println("NEW LAST: "  + myStack.get(lastOp));
                                     break;
                                 }
                             }
@@ -213,13 +266,22 @@ public class QuadsGenerator {
                             lastOp = myStack.size() - 1;
                             quads qds = new quads();
                             if(tokens.get(i).item.equals("WHILE")){
+                                whiles++;
                                 qds.op = "WHILE";
+                                qds.arg1 = "W"+ whiles;
+                                whileFix.add(qds.arg1);
                             } else if (tokens.get(i).item.equals("DO")){
                                 qds.op = "DO";
+                                labels++;
+                                fixUp.add("L" + labels);
+                                qds.arg1 = fixUp.get(fixUp.size()-1);
                             } else if (tokens.get(i).item.equals("IF")) {
                                 qds.op = "IF";
                             } else if (tokens.get(i).item.equals("THEN")){
                                 qds.op = "THEN";
+                                labels++;
+                                fixUp.add("L" + labels);
+                                qds.arg1 = fixUp.get(fixUp.size()-1);
                             }
                             if (qds.op != null){
                                 writer.println(qds);
@@ -232,7 +294,6 @@ public class QuadsGenerator {
                         for(int x = myStack.size() -1; x > -1; x--){
                             if(headers.contains(myStack.get(x).item)){
                                 lastOp = x;
-                                System.out.println("NEW LAST: "  + myStack.get(lastOp));
                                 break;
                             }
                         }
